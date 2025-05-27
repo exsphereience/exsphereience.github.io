@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sphere Show Financial Tradeoff Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        /* Base font size - adjusted for overall smaller text */
+        html {
+            font-size: 13px; /* Adjusted base font size for a generally smaller look */
+        }
+
+        /* Custom font for better readability */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d122e; /* Dark blue/purple background inspired by Infinity */
+            color: #e2e8f0; /* Light grey text */
+        }
+        /* Highlight input fields for clarity */
+        .input-field {
+            background-color: #2a3052; /* Darker input field background */
+            border-color: #818cf8; /* Lighter blue/purple border */
+            color: #e2e8f0; /* Light text in input fields */
+            font-size: 0.85rem; /* Smaller font for inputs */
+        }
+        /* Input parameter labels - made darker for readability */
+        .mb-10 label {
+            color: #a0aec0; /* Darker light grey for labels */
+            font-size: 0.85rem; /* Smaller font for labels */
+        }
+        /* Table styling for better readability */
+        th, td {
+            padding: 0.4rem 0.6rem; /* Smaller padding */
+            text-align: right;
+            white-space: nowrap; /* Prevent wrapping in cells */
+            font-size: 0.8rem; /* Smaller font for table cells */
+        }
+        th {
+            background-color: #1a203e; /* Darker blue/purple for headers */
+            font-weight: 600;
+            text-align: center;
+            color: #e2e8f0; /* Light text for headers */
+        }
+        /* Odd rows for show-by-show financials - made lighter to contrast with dark text */
+        tr:nth-child(odd):not(.summary-row):not(.show-zero-row) {
+            background-color: #e0e7ff; /* Very light blue */
+            color: #1a202c; /* Dark text */
+        }
+        tr:nth-child(even):not(.summary-row):not(.show-zero-row) {
+            background-color: #c7d2fe; /* Slightly darker light blue */
+            color: #1a202c; /* Dark text */
+        }
+        /* Specific coloring for positive/negative values within the table rows */
+        tr:not(.summary-row):not(.show-zero-row) .negative-value {
+            color: #dc2626; /* Darker red for light background */
+        }
+        tr:not(.summary-row):not(.show-zero-row) .positive-value {
+            color: #16a34a; /* Darker green for light background */
+        }
+
+        .summary-box {
+            background-color: #5b21b6; /* Deep purple for summary */
+            border-color: #a78bfa; /* Lighter purple border */
+            color: #e2e8f0; /* Light text for summary */
+            font-size: 0.85rem; /* Smaller font for summary box */
+        }
+        .summary-box h2 {
+            color: #e2e8f0; /* Ensure summary heading is light */
+            font-size: 1.5rem; /* Adjusted heading size */
+        }
+        .summary-box p {
+            font-size: 0.85rem; /* Smaller font for summary text */
+        }
+        /* Positive/negative values in summary box (light text on dark background) */
+        .summary-box .negative-value {
+            color: #fca5a5; /* Lighter red */
+        }
+        .summary-box .positive-value {
+            color: #a7f3d0; /* Lighter green */
+        }
+        /* Scrollable table for smaller screens */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        .summary-row {
+            background-color: #7c3aed; /* Medium purple for summary rows */
+            font-weight: bold;
+            border-top: 2px solid #a78bfa; /* Purple border for separation */
+            color: #e2e8f0; /* Light text for summary rows */
+            font-size: 0.8rem; /* Smaller font for summary rows */
+        }
+        .show-zero-row {
+            background-color: #ffeccf; /* Light orange for Show 0 */
+            font-weight: bold;
+            border-bottom: 2px solid #fcd34d;
+            color: #374151; /* Dark text on light orange */
+            font-size: 0.8rem; /* Smaller font for Show 0 row */
+        }
+        .journey-header {
+            background-image: url('https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/Journey_-_Infinity_album_cover.jpg/220px-Journey_-_Infinity_album_cover.jpg'); /* Journey Infinity Album Cover */
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 1.2rem 0; /* Smaller padding */
+            margin-bottom: 1.5rem; /* Smaller margin */
+            font-size: 2rem; /* Adjusted for overall smaller font size */
+            font-weight: bold;
+            text-shadow: 0 0 8px #00f, 0 0 15px #00f, 0 0 25px #00f, 0 0 30px #f0f, 0 0 50px #f0f, 0 0 60px #f0f, 0 0 80px #f0f; /* Neon glow */
+            font-family: 'Bebas Neue', sans-serif; /* Journey-like font */
+            letter-spacing: 0.08em; /* Adjusted letter spacing */
+        }
+        .max-w-7xl {
+            background-color: #2a3052; /* Darker container background inspired by Infinity */
+            color: #e2e8f0; /* Light text inside container */
+        }
+        .max-w-7xl h1, .max-w-7xl h2 {
+            color: #e2e8f0; /* Ensure headings are light */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto shadow-xl rounded-lg p-6 sm:p-8">
+        <div class="journey-header">
+            Sphere Show Financial Analysis
+        </div>
+
+        <div id="statusMessage" class="text-center mb-4"></div>
+
+        <div class="mb-10 p-6 bg-gray-50 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Input Parameters</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label for="showCost" class="block text-sm font-medium text-gray-700">Show Cost (Equity Investment, One-time)</label>
+                    <input type="number" id="showCost" value="10000000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="equityReturnPct" class="block text-sm font-medium text-gray-700">Equity Return Percentage (%)</label>
+                    <input type="number" id="equityReturnPct" value="15" min="0" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="ticketPrice" class="block text-sm font-medium text-gray-700">Average Ticket Price</label>
+                    <input type="number" id="ticketPrice" value="200" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="ticketsSoldPerShow" class="block text-sm font-medium text-gray-700">Tickets Sold per Show (Default to Venue Capacity)</label>
+                    <input type="number" id="ticketsSoldPerShow" value="16000" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="venueCostPerShow" class="block text-sm font-medium text-gray-700">Venue Cost per Show</label>
+                    <input type="number" id="venueCostPerShow" value="1000000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="marketingOtherExpenses" class="block text-sm font-medium text-gray-700">Marketing & Other Expenses per Show</label>
+                    <input type="number" id="marketingOtherExpenses" value="200000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="minBandGuarantee" class="block text-sm font-medium text-gray-700">Minimum Band Guarantee per Show</label>
+                    <input type="number" id="minBandGuarantee" value="500000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="promoterFixedExpenses" class="block text-sm font-medium text-gray-700">Promoter's Fixed Expenses per Show</label>
+                    <input type="number" id="promoterFixedExpenses" value="50000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="bandSplitPct" class="block text-sm font-medium text-gray-700">Band's Split Percentage (%) (Used if No Guarantee)</label>
+                    <input type="number" id="bandSplitPct" value="90" min="0" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="charitySplitPct" class="block text-sm font-medium text-gray-700">Charity Split Percentage (%) (From Profit After Equity)</label>
+                    <input type="number" id="charitySplitPct" value="10" min="0" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="showProfitSplitPoint" class="block text-sm font-medium text-gray-700">Show Profit Split Point (Cumulative Profit After Equity)</label>
+                    <input type="number" id="showProfitSplitPoint" value="1000000" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+                <div>
+                    <label for="numberOfShows" class="block text-sm font-medium text-gray-700">Number of Shows</label>
+                    <input type="number" id="numberOfShows" value="40" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 input-field">
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6 summary-box rounded-lg shadow-md border-2 mb-10">
+            <h2 class="text-2xl font-bold mb-6 text-center">Cumulative Summary (All <span id="totalNumShowsDisplay">40</span> Shows)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-lg font-semibold">
+                <div>
+                    <p class="text-gray-300">Total Gross Revenue:</p>
+                    <p id="totalGrossRevenue" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Show Expenses (Excl. Equity):</p>
+                    <p id="totalShowExpenses" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Minimum Band Guarantee Paid:</p>
+                    <p id="totalMinBandGuaranteePaid" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Equity Repayment & Profit:</p>
+                    <p id="totalEquityRepaymentProfit" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Band Earnings:</p>
+                    <p id="totalBandEarnings" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Promoter Earnings:</p>
+                    <p id="totalPromoterEarnings" class="text-white">$0</p>
+                </div>
+                <div>
+                    <p class="text-gray-300">Total Charity Earnings:</p>
+                    <p id="totalCharityEarnings" class="text-white">$0</p>
+                </div>
+                <div class="md:col-span-2 lg:col-span-1">
+                    <p class="text-gray-300">Overall Equity Profit/Loss:</p>
+                    <p id="overallEquityProfitLoss" class="text-white">$0</p>
+                </div>
+                <div class="md:col-span-2 lg:col-span-1">
+                    <p class="text-gray-300">Total Net Cash (Cumulative):</p>
+                    <p id="totalNetCash" class="text-white">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-10 table-container rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Show-by-Show Financials (<span id="numShowsDisplay">40</span> Shows)</h2>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Show #</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Tickets Sold</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Gross Ticket Revenue</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Total Per-Show Expenses</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Profit Before All Deductions</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Band Guarantee Paid</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Profit After Guarantee</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Equity Repayment This Show</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Profit After Equity</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Charity Earnings</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Cumulative Profit After Equity</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Band's Share from Split</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Promoter's Share from Split</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Band's Total Earnings</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Promoter's Total Earnings</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Actual Profit/Loss (Show)</th>
+                        <th scope="col" class="px-4 py-3 text-xs font-medium uppercase tracking-wider">Net Cash (Cumulative)</th>
+                    </tr>
+                </thead>
+                <tbody id="showsTableBody" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Function to format numbers as currency (with decimals for table, no decimals for summary)
+        function formatCurrency(amount, roundToNearestDollar = false) {
+            if (roundToNearestDollar) {
+                amount = Math.round(amount);
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: roundToNearestDollar ? 0 : 2,
+                maximumFractionDigits: roundToNearestDollar ? 0 : 2
+            }).format(amount);
+        }
+
+        // Global variables to track cumulative values across all shows
+        var cumulativeEquityPaidBackGlobal = 0;
+        var cumulativeProfitAfterEquityForSplitGlobal = 0;
+        var netCashCumulativeGlobal = 0; // Will be initialized for Show 0
+
+        // Main function to recalculate all financials
+        function recalculateAll() {
+            // Get input elements and status message div INSIDE the function
+            var showCostInput = document.getElementById('showCost');
+            var equityReturnPctInput = document.getElementById('equityReturnPct');
+            var ticketPriceInput = document.getElementById('ticketPrice');
+            var ticketsSoldPerShowInput = document.getElementById('ticketsSoldPerShow');
+            var venueCostPerShowInput = document.getElementById('venueCostPerShow');
+            var marketingOtherExpensesInput = document.getElementById('marketingOtherExpenses');
+            var minBandGuaranteeInput = document.getElementById('minBandGuarantee');
+            var promoterFixedExpensesInput = document.getElementById('promoterFixedExpenses');
+            var bandSplitPctInput = document.getElementById('bandSplitPct');
+            var charitySplitPctInput = document.getElementById('charitySplitPct'); // New charity input
+            var showProfitSplitPointInput = document.getElementById('showProfitSplitPoint');
+            var numberOfShowsInput = document.getElementById('numberOfShows');
+            var showsTableBody = document.getElementById('showsTableBody');
+            var statusMessageDiv = document.getElementById('statusMessage');
+            var numShowsDisplay = document.getElementById('numShowsDisplay');
+            var totalNumShowsDisplay = document.getElementById('totalNumShowsDisplay');
+            var totalCharityEarningsDisplay = document.getElementById('totalCharityEarnings'); // New summary total for charity
+
+            // Check if statusMessageDiv is null before trying to set textContent
+            if (statusMessageDiv) {
+                statusMessageDiv.textContent = "Recalculating...";
+                statusMessageDiv.className = 'text-center mb-4'; // Reset class for status messages
+            } else {
+                console.error("Error: statusMessageDiv not found!");
+                return; // Exit function if critical element is missing
+            }
+
+            try {
+                console.log('recalculateAll function called!'); // Debugging log
+
+                // Get current input values
+                var showCost = parseFloat(showCostInput.value);
+                var equityReturnPct = parseFloat(equityReturnPctInput.value);
+                var ticketPrice = parseFloat(ticketPriceInput.value);
+                var ticketsSoldPerShow = parseFloat(ticketsSoldPerShowInput.value);
+                var venueCostPerShow = parseFloat(venueCostPerShowInput.value);
+                var marketingOtherExpenses = parseFloat(marketingOtherExpensesInput.value);
+                var minBandGuarantee = parseFloat(minBandGuaranteeInput.value);
+                var promoterFixedExpenses = parseFloat(promoterFixedExpensesInput.value);
+                var bandSplitPct = parseFloat(bandSplitPctInput.value);
+                var charitySplitPct = parseFloat(charitySplitPctInput.value); // Get charity percentage
+                var showProfitSplitPoint = parseFloat(showProfitSplitPointInput.value);
+                var numberOfShows = parseFloat(numberOfShowsInput.value); // Get number of shows
+
+                // Update display for number of shows in titles
+                numShowsDisplay.textContent = numberOfShows;
+                totalNumShowsDisplay.textContent = numberOfShows;
+
+                // Reset cumulative values for a fresh calculation run
+                cumulativeEquityPaidBackGlobal = 0;
+                cumulativeProfitAfterEquityForSplitGlobal = 0;
+                
+                // --- Initialize Net Cash for Show 0 (Upfront Costs) ---
+                // Show 0 includes initial Show Cost (Equity Investment) and first show's per-show expenses and band guarantee
+                var initialUpfrontCosts = showCost + venueCostPerShow + marketingOtherExpenses + promoterFixedExpenses + minBandGuarantee;
+                netCashCumulativeGlobal = -initialUpfrontCosts;
+                console.log('Initial Net Cash (Show 0): ' + netCashCumulativeGlobal);
+
+                var totalEquityToPayBack = showCost * (1 + equityReturnPct / 100);
+
+                // Clear existing table rows
+                showsTableBody.innerHTML = '';
+                console.log('Table body cleared.');
+
+                // --- Add Show 0 row ---
+                var showZeroRow = document.createElement('tr');
+                showZeroRow.classList.add('show-zero-row');
+                showZeroRow.innerHTML = `
+                    <td class="px-4 py-2 text-center text-sm font-medium text-gray-900">0 (Upfront)</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">N/A</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(initialUpfrontCosts)}</td>
+                    <td class="px-4 py-2 text-sm ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(minBandGuarantee)}</td>
+                    <td class="px-4 py-2 text-sm ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm ${showCost < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(showCost)}</td>
+                    <td class="px-4 py-2 text-sm ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm font-semibold ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm font-semibold ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm font-semibold ${0 < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(0)}</td>
+                    <td class="px-4 py-2 text-sm font-semibold ${netCashCumulativeGlobal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(netCashCumulativeGlobal)}</td>
+                `;
+                showsTableBody.appendChild(showZeroRow);
+
+
+                var cumulativeGrossRevenue = 0;
+                var cumulativeTotalPerShowExpenses = 0;
+                var cumulativeMinBandGuaranteePaid = 0;
+                var cumulativeEquityRepaymentThisShowTotal = 0;
+                var cumulativeBandEarnings = 0;
+                var cumulativePromoterEarnings = 0;
+                var cumulativeCharityEarnings = 0; // New cumulative for charity
+                var cumulativeBandShareFromSplit = 0;
+                var cumulativePromoterShareFromSplit = 0;
+                var cumulativeActualProfitLossShow = 0; // New cumulative for Actual Profit/Loss (Show)
+
+
+                // Loop through specified number of shows (Show 1 to numberOfShows)
+                for (var i = 0; i < numberOfShows; i++) {
+                    var showNumber = i + 1;
+                    console.log('Processing show number: ' + showNumber);
+
+                    // Gross Ticket Revenue
+                    var grossTicketRevenue = ticketsSoldPerShow * ticketPrice;
+
+                    // Total Per-Show Expenses (Venue, Marketing, Promoter Fixed)
+                    var totalPerShowExpenses = venueCostPerShow + marketingOtherExpenses + promoterFixedExpenses;
+
+                    // Profit Before Any Deductions (PBD) - This is the initial profit for the show
+                    var profitBeforeAllDeductions = grossTicketRevenue - totalPerShowExpenses;
+
+                    // --- 1. Band's Earnings Determination (Guarantee First) ---
+                    var bandTotalEarnings = 0;
+                    var minBandGuaranteePaid = 0; // The actual guarantee paid for this show
+                    var profitAfterBandGuarantee = profitBeforeAllDeductions; // Remaining profit after band guarantee
+
+                    if (minBandGuarantee > 0) {
+                        // Case A: Band has a guarantee - paid even before equity
+                        minBandGuaranteePaid = Math.min(Math.max(0, profitBeforeAllDeductions), minBandGuarantee);
+                        bandTotalEarnings = minBandGuaranteePaid; // Band's initial earnings for this show
+                        profitAfterBandGuarantee = profitBeforeAllDeductions - bandTotalEarnings;
+                    } else {
+                        // Case B: No guarantee, band will participate in split later
+                        minBandGuaranteePaid = 0;
+                        bandTotalEarnings = 0; // Will be calculated from split later if applicable
+                    }
+
+                    // --- 2. Equity Repayment Logic ---
+                    var equityRepaymentThisShow = 0;
+                    var profitAfterEquity = profitAfterBandGuarantee; // Remaining profit after band guarantee
+
+                    // Only attempt to pay equity if there's still a balance due
+                    if (cumulativeEquityPaidBackGlobal < totalEquityToPayBack) {
+                        var remainingEquityToPay = totalEquityToPayBack - cumulativeEquityPaidBackGlobal;
+                        // Equity gets paid from the available profit, up to the remaining balance due
+                        equityRepaymentThisShow = Math.min(Math.max(0, profitAfterBandGuarantee), remainingEquityToPay);
+                        cumulativeEquityPaidBackGlobal += equityRepaymentThisShow;
+                        profitAfterEquity = profitAfterBandGuarantee - equityRepaymentThisShow;
+                    }
+
+                    // --- 3. Charity Calculation ---
+                    var charityEarnings = 0;
+                    var profitAfterCharity = profitAfterEquity;
+
+                    if (profitAfterEquity > 0) {
+                        charityEarnings = profitAfterEquity * (charitySplitPct / 100);
+                        profitAfterCharity = profitAfterEquity - charityEarnings;
+                    }
+
+                    // --- 4. Band/Promoter Split Logic ---
+                    var promoterTotalEarnings = 0;
+                    var bandShareFromSplit = 0;
+                    var promoterShareFromSplit = 0;
+                    
+                    // Update cumulative profit after equity for split point tracking (this is the value BEFORE charity deduction)
+                    var cumulativeProfitAfterEquityBeforeThisShow = cumulativeProfitAfterEquityForSplitGlobal;
+                    cumulativeProfitAfterEquityForSplitGlobal += profitAfterCharity; // Use profitAfterCharity for this cumulative, as charity is before split
+
+
+                    if (minBandGuarantee === 0) {
+                        // Scenario: Band has NO guarantee, their earnings are purely from the split
+                        if (profitAfterCharity > 0) { // Ensure there's profit to distribute after charity
+                            if (cumulativeProfitAfterEquityBeforeThisShow < showProfitSplitPoint) {
+                                // We are still before the cumulative split point
+                                var amountNeededToReachSplitPoint = showProfitSplitPoint - cumulativeProfitAfterEquityBeforeThisShow;
+
+                                if (profitAfterCharity <= amountNeededToReachSplitPoint) {
+                                    // Current show's profit doesn't cross the split point, promoter gets all
+                                    promoterTotalEarnings = profitAfterCharity;
+                                    bandTotalEarnings = 0; // Band gets nothing from split yet
+                                } else {
+                                    // Current show's profit crosses the split point
+                                    var promoterPreSplitProfit = amountNeededToReachSplitPoint;
+                                    var profitToSplit = profitAfterCharity - promoterPreSplitProfit;
+
+                                    bandShareFromSplit = profitToSplit * (bandSplitPct / 100);
+                                    promoterShareFromSplit = profitToSplit * (1 - bandSplitPct / 100);
+
+                                    bandTotalEarnings = bandShareFromSplit;
+                                    promoterTotalEarnings = promoterPreSplitProfit + promoterShareFromSplit;
+                                }
+                            } else {
+                                // Cumulative profit is already at or above the split point, so split all current show's profit
+                                bandShareFromSplit = profitAfterCharity * (bandSplitPct / 100);
+                                promoterShareFromSplit = profitAfterCharity * (1 - bandSplitPct / 100);
+                                bandTotalEarnings = bandShareFromSplit;
+                                promoterTotalEarnings = promoterShareFromSplit;
+                            }
+                        } else {
+                            // No profit after charity, so no earnings for band or promoter from split
+                            bandTotalEarnings = 0;
+                            promoterTotalEarnings = 0;
+                        }
+                    } else {
+                        // Scenario: Band HAS a guarantee. Their earnings are the HIGHER of guarantee or split share.
+                        if (profitAfterCharity > 0) {
+                            if (cumulativeProfitAfterEquityBeforeThisShow < showProfitSplitPoint) {
+                                // Promoter gets all profit after charity until cumulative split point is reached
+                                promoterTotalEarnings = profitAfterCharity;
+                                bandShareFromSplit = 0; // No split share for band in this case
+                                promoterShareFromSplit = 0; // No split share for promoter in this case
+                            } else {
+                                // Cumulative split point reached. Now, the *remaining* profit (profitAfterCharity) is subject to split.
+                                var profit_available_for_split_after_guarantee = profitAfterCharity; // This is the pool to split
+
+                                bandShareFromSplit = profit_available_for_split_after_guarantee * (bandSplitPct / 100);
+                                promoterShareFromSplit = profit_available_for_split_after_guarantee * (1 - bandSplitPct / 100);
+
+                                // Band gets the higher of its guarantee or its split share
+                                bandTotalEarnings = Math.max(minBandGuaranteePaid, bandShareFromSplit);
+
+                                // CORRECTED: Promoter's earnings are simply the remaining profit after band's final take
+                                promoterTotalEarnings = profit_available_for_split_after_guarantee - bandTotalEarnings;
+                                promoterTotalEarnings = Math.max(0, promoterTotalEarnings); // Ensure non-negative
+                            }
+                        } else {
+                            // No profit after charity, so no additional earnings for promoter beyond fixed expenses
+                            promoterTotalEarnings = 0;
+                            bandShareFromSplit = 0;
+                            promoterShareFromSplit = 0;
+                        }
+                    }
+                    console.log('Calculations for show ' + showNumber + ' complete.');
+
+                    // Actual Profit/Loss per Show (for the show itself)
+                    // This represents any undistributed profit or remaining loss for the show.
+                    var actualProfitLossShow = grossTicketRevenue - totalPerShowExpenses - bandTotalEarnings - promoterTotalEarnings - equityRepaymentThisShow - charityEarnings;
+                    console.log('Actual Profit/Loss Show: ' + actualProfitLossShow);
+
+                    // --- Net Cash Calculation ---
+                    // Net cash flow for this specific show (positive for inflow, negative for outflow)
+                    // It's gross revenue minus all per-show cash expenses (venue, marketing, promoter fixed, band guarantee, charity)
+                    var netCashPerShow = grossTicketRevenue - (venueCostPerShow + marketingOtherExpenses + promoterFixedExpenses + minBandGuaranteePaid + charityEarnings);
+                    netCashCumulativeGlobal += netCashPerShow; // Update cumulative net cash
+                    console.log('Net Cash Cumulative: ' + netCashCumulativeGlobal);
+
+
+                    // Update cumulative totals for the main summary
+                    cumulativeGrossRevenue += grossTicketRevenue;
+                    cumulativeTotalPerShowExpenses += totalPerShowExpenses;
+                    cumulativeMinBandGuaranteePaid += minBandGuaranteePaid;
+                    cumulativeEquityRepaymentThisShowTotal += equityRepaymentThisShow;
+                    cumulativeBandEarnings += bandTotalEarnings;
+                    cumulativePromoterEarnings += promoterTotalEarnings;
+                    cumulativeCharityEarnings += charityEarnings; // Accumulate charity earnings
+                    cumulativeBandShareFromSplit += bandShareFromSplit; // Accumulate for summary
+                    cumulativePromoterShareFromSplit += promoterShareFromSplit; // Accumulate for summary
+                    cumulativeActualProfitLossShow += actualProfitLossShow; // Accumulate for summary
+
+
+                    // Create and append table row for the current show
+                    var row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-center text-sm font-medium text-gray-900">${showNumber}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${ticketsSoldPerShow.toLocaleString()}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(grossTicketRevenue)}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(totalPerShowExpenses)}</td>
+                        <td class="px-4 py-2 text-sm ${profitBeforeAllDeductions < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(profitBeforeAllDeductions)}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(minBandGuaranteePaid)}</td>
+                        <td class="px-4 py-2 text-sm ${profitAfterBandGuarantee < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(profitAfterBandGuarantee)}</td>
+                        <td class="px-4 py-2 text-sm ${equityRepaymentThisShow < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(equityRepaymentThisShow)}</td>
+                        <td class="px-4 py-2 text-sm ${profitAfterEquity < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(profitAfterEquity)}</td>
+                        <td class="px-4 py-2 text-sm">${formatCurrency(charityEarnings)}</td>
+                        <td class="px-4 py-2 text-sm ${cumulativeProfitAfterEquityForSplitGlobal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeProfitAfterEquityForSplitGlobal)}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(bandShareFromSplit)}</td>
+                        <td class="px-4 py-2 text-sm text-gray-800">${formatCurrency(promoterShareFromSplit)}</td>
+                        <td class="px-4 py-2 text-sm font-semibold ${bandTotalEarnings < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(bandTotalEarnings)}</td>
+                        <td class="px-4 py-2 text-sm font-semibold ${promoterTotalEarnings < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(promoterTotalEarnings)}</td>
+                        <td class="px-4 py-2 text-sm font-semibold ${actualProfitLossShow < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(actualProfitLossShow)}</td>
+                        <td class="px-4 py-2 text-sm font-semibold ${netCashCumulativeGlobal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(netCashCumulativeGlobal)}</td>
+                    `;
+                    showsTableBody.appendChild(row);
+                    console.log('Row appended for show ' + showNumber);
+
+
+                    // Add summary row after every 5 shows (cumulative from Show 1 to current show)
+                    if ((i + 1) % 5 === 0) {
+                        var summaryRow = document.createElement('tr');
+                        summaryRow.classList.add('summary-row');
+                        summaryRow.innerHTML = `
+                            <td class="px-4 py-2 text-center text-sm" colspan="2">Shows 1 - ${i + 1} Cumulative Totals</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativeGrossRevenue)}</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativeTotalPerShowExpenses)}</td>
+                            <td class="px-4 py-2 text-sm ${ (cumulativeGrossRevenue - cumulativeTotalPerShowExpenses) < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeGrossRevenue - cumulativeTotalPerShowExpenses)}</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativeMinBandGuaranteePaid)}</td>
+                            <td class="px-4 py-2 text-sm ${ (cumulativeGrossRevenue - cumulativeTotalPerShowExpenses - cumulativeMinBandGuaranteePaid) < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeGrossRevenue - cumulativeTotalPerShowExpenses - cumulativeMinBandGuaranteePaid)}</td>
+                            <td class="px-4 py-2 text-sm ${ cumulativeEquityRepaymentThisShowTotal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeEquityRepaymentThisShowTotal)}</td>
+                            <td class="px-4 py-2 text-sm ${ (cumulativeGrossRevenue - cumulativeTotalPerShowExpenses - cumulativeMinBandGuaranteePaid - cumulativeEquityRepaymentThisShowTotal) < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeGrossRevenue - cumulativeTotalPerShowExpenses - cumulativeMinBandGuaranteePaid - cumulativeEquityRepaymentThisShowTotal)}</td>
+                            <td class="px-4 py-2 text-sm ${cumulativeProfitAfterEquityForSplitGlobal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeProfitAfterEquityForSplitGlobal)}</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativeCharityEarnings)}</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativeBandShareFromSplit)}</td>
+                            <td class="px-4 py-2 text-sm">${formatCurrency(cumulativePromoterShareFromSplit)}</td>
+                            <td class="px-4 py-2 text-sm ${cumulativeBandEarnings < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeBandEarnings)}</td>
+                            <td class="px-4 py-2 text-sm ${cumulativePromoterEarnings < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativePromoterEarnings)}</td>
+                            <td class="px-4 py-2 text-sm ${cumulativeActualProfitLossShow < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(cumulativeActualProfitLossShow)}</td>
+                            <td class="px-4 py-2 text-sm ${netCashCumulativeGlobal < 0 ? 'negative-value' : 'positive-value'}">${formatCurrency(netCashCumulativeGlobal)}</td>
+                        `;
+                        showsTableBody.appendChild(summaryRow);
+                        console.log('Summary row appended for shows 1 - ' + (i + 1));
+
+                        // No reset of block totals here, as they are now cumulative of all shows from the start.
+                    }
+                }
+
+                // Calculate overall equity profit/loss (actual profit made by equity)
+                var overallEquityProfitLoss = cumulativeEquityRepaymentThisShowTotal - showCost;
+                console.log('Calculated overallEquityProfitLoss:', overallEquityProfitLoss);
+
+
+                // Update summary section
+                document.getElementById('totalGrossRevenue').textContent = formatCurrency(cumulativeGrossRevenue, true);
+                document.getElementById('totalShowExpenses').textContent = formatCurrency(cumulativeTotalPerShowExpenses, true);
+                document.getElementById('totalMinBandGuaranteePaid').textContent = formatCurrency(cumulativeMinBandGuaranteePaid, true);
+                document.getElementById('totalEquityRepaymentProfit').textContent = formatCurrency(cumulativeEquityRepaymentThisShowTotal, true);
+                document.getElementById('totalBandEarnings').textContent = formatCurrency(cumulativeBandEarnings, true);
+                document.getElementById('totalPromoterEarnings').textContent = formatCurrency(cumulativePromoterEarnings, true);
+                totalCharityEarningsDisplay.textContent = formatCurrency(cumulativeCharityEarnings, true); // Update total charity earnings
+                
+                document.getElementById('overallEquityProfitLoss').classList.toggle('negative-value', overallEquityProfitLoss < 0);
+                document.getElementById('overallEquityProfitLoss').classList.toggle('positive-value', overallEquityProfitLoss >= 0);
+                document.getElementById('totalNetCash').classList.toggle('negative-value', netCashCumulativeGlobal < 0);
+                document.getElementById('totalNetCash').classList.toggle('positive-value', netCashCumulativeGlobal >= 0);
+                totalCharityEarningsDisplay.classList.toggle('negative-value', cumulativeCharityEarnings < 0);
+                totalCharityEarningsDisplay.classList.toggle('positive-value', cumulativeCharityEarnings >= 0);
+
+                // Update total net cash in summary
+                document.getElementById('totalNetCash').textContent = formatCurrency(netCashCumulativeGlobal, true);
+                document.getElementById('overallEquityProfitLoss').textContent = formatCurrency(overallEquityProfitLoss, true);
+
+
+                // Remove status message after successful calculation
+                if (statusMessageDiv) {
+                    statusMessageDiv.textContent = "";
+                    statusMessageDiv.classList.remove('status-success', 'status-error');
+                }
+
+            } catch (error) {
+                console.error("An error occurred during recalculation:", error);
+                if (statusMessageDiv) {
+                    statusMessageDiv.textContent = "An error occurred during calculation. Please check your inputs or the console for details.";
+                    statusMessageDiv.classList.add('status-error');
+                }
+            }
+        }
+
+        // Add event listeners to input fields to trigger recalculation
+        // These listeners are now attached after the window has loaded, ensuring elements exist.
+        window.onload = function() {
+            var showCostInput = document.getElementById('showCost');
+            var equityReturnPctInput = document.getElementById('equityReturnPct');
+            var ticketPriceInput = document.getElementById('ticketPrice');
+            var ticketsSoldPerShowInput = document.getElementById('ticketsSoldPerShow');
+            var venueCostPerShowInput = document.getElementById('venueCostPerShow');
+            var marketingOtherExpensesInput = document.getElementById('marketingOtherExpenses');
+            var minBandGuaranteeInput = document.getElementById('minBandGuarantee');
+            var promoterFixedExpensesInput = document.getElementById('promoterFixedExpenses');
+            var bandSplitPctInput = document.getElementById('bandSplitPct');
+            var charitySplitPctInput = document.getElementById('charitySplitPct'); // New charity input listener
+            var showProfitSplitPointInput = document.getElementById('showProfitSplitPoint');
+            var numberOfShowsInput = document.getElementById('numberOfShows');
+
+            showCostInput.addEventListener('input', recalculateAll);
+            equityReturnPctInput.addEventListener('input', recalculateAll);
+            ticketPriceInput.addEventListener('input', recalculateAll);
+            ticketsSoldPerShowInput.addEventListener('input', recalculateAll);
+            venueCostPerShowInput.addEventListener('input', recalculateAll);
+            marketingOtherExpensesInput.addEventListener('input', recalculateAll);
+            minBandGuaranteeInput.addEventListener('input', recalculateAll);
+            promoterFixedExpensesInput.addEventListener('input', recalculateAll);
+            bandSplitPctInput.addEventListener('input', recalculateAll);
+            charitySplitPctInput.addEventListener('input', recalculateAll); // Add charity input listener
+            showProfitSplitPointInput.addEventListener('input', recalculateAll);
+            numberOfShowsInput.addEventListener('input', recalculateAll);
+
+            recalculateAll(); // Initial calculation on page load
+        };
+    </script>
+</body>
+</html>
